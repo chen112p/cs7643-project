@@ -47,6 +47,8 @@ def train(epoch, data_loader, model, optimizer, criterion):
     losses = AverageMeter()
     acc = AverageMeter()
 
+    num_class = 2
+    cm = torch.zeros(num_class, num_class)
     for idx, (data, target) in enumerate(data_loader):
         start = time.time()
 
@@ -58,6 +60,11 @@ def train(epoch, data_loader, model, optimizer, criterion):
         optimizer.zero_grad()
 
         batch_acc = accuracy(out, target)
+
+        # update confusion matrix
+        _, preds = torch.max(out, 1)
+        for t, p in zip(target.view(-1), preds.view(-1)):
+            cm[t.long(), p.long()] += 1
 
         losses.update(loss.item(), out.shape[0])
         acc.update(batch_acc, out.shape[0])
@@ -74,6 +81,13 @@ def train(epoch, data_loader, model, optimizer, criterion):
                        iter_time=iter_time,
                        loss=losses,
                        top1=acc))
+    cm = cm / cm.sum(1)
+    per_cls_acc = cm.diag().detach().numpy().tolist()
+    for i, acc_i in enumerate(per_cls_acc):
+        print("Train Accuracy of Class {}: {:.4f}".format(i, acc_i))
+
+    print("* Train Prec @1: {top1.avg:.4f}".format(top1=acc))
+    return acc.avg, cm
 
 
 def validate(epoch, val_loader, model, criterion):
@@ -114,7 +128,7 @@ def validate(epoch, val_loader, model, criterion):
     cm = cm / cm.sum(1)
     per_cls_acc = cm.diag().detach().numpy().tolist()
     for i, acc_i in enumerate(per_cls_acc):
-        print("Accuracy of Class {}: {:.4f}".format(i, acc_i))
+        print("Valid Accuracy of Class {}: {:.4f}".format(i, acc_i))
 
-    print("* Prec @1: {top1.avg:.4f}".format(top1=acc))
+    print("* Valid Prec @1: {top1.avg:.4f}".format(top1=acc))
     return acc.avg, cm

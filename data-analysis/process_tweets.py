@@ -2,15 +2,9 @@
 Utility to process raw tweets
 """
 
-
-import matplotlib.pyplot as plt
-import numpy as np
+from nltk.corpus import stopwords
 import os
 import pandas as pd
-from sklearn.metrics import f1_score, precision_score, recall_score, precision_recall_fscore_support
-from sklearn.model_selection import StratifiedKFold
-from sklearn.preprocessing import LabelEncoder
-import time
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import TensorDataset
@@ -130,6 +124,10 @@ def give_emoji_free_text(text):
     # remove empty strings
     list2 = [s for s in list1 if s]
 
-    clean_text = ' '.join([s for s in list2])
+    # remove any stop words with nltk
+    stop = stopwords.words('english')
+    list3 = [s for s in list2 if s not in stop]
+
+    clean_text = ' '.join([s for s in list3])
         
     return clean_text
