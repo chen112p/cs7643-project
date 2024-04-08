@@ -19,7 +19,20 @@ def get_data(
     train_file: Union[str, os.PathLike] = None,
     test_file: Union[str, os.PathLike] = None,
 ):
-    
+    """
+    Read and clean raw data from the hateful tweet dataset
+
+    Parameters:
+        train_file (str): Path of the training data in TSV format
+        test_file (str): Path of the test data in TSV format
+    Returns:
+        train_dataset (TensorDataset): Tensor dataset used by pytorch for training set
+        test_dataset (TensorDataset): Tensor dataset used by pytorch for training set
+        alphabet (dict): number of appearance of each word in the entire dataset
+        longest_sent (int): longest sentence
+        train_x (torch.tensor): tensor of the training set
+        test_x (torch.tensor): tensor of the test set
+    """
     assert train_file is not None, "train_file location cannot be found"
     assert test_file is not None, "test_file location cannot be found"
 
