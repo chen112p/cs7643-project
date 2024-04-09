@@ -4,11 +4,15 @@ Utility to train and validate RNN model
 
 import copy
 import matplotlib.pyplot as plt
+import os
+import pandas as pd
+import pickle
 import time
 import torch
 from torch.utils.data import DataLoader
-from process_tweets import get_data
+from process_tweets import (get_data, convert_tweet2tensor)
 from rnn import MyModel
+from typing import Union
 
 
 def accuracy(output, target):
@@ -22,6 +26,7 @@ def accuracy(output, target):
     acc = correct / batch_size
 
     return acc
+
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -42,7 +47,13 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
-def train(epoch, data_loader, model, optimizer, criterion):
+def train(
+    epoch: int,
+    data_loader: DataLoader,
+    model: torch.nn.Module,
+    optimizer,
+    criterion
+):
     iter_time = AverageMeter()
     losses = AverageMeter()
     acc = AverageMeter()
@@ -90,7 +101,12 @@ def train(epoch, data_loader, model, optimizer, criterion):
     return acc.avg, cm
 
 
-def validate(epoch, val_loader, model, criterion):
+def validate(
+    epoch: int,
+    val_loader: DataLoader,
+    model: torch.nn.Module,
+    criterion
+):
     iter_time = AverageMeter()
     losses = AverageMeter()
     acc = AverageMeter()
@@ -132,3 +148,22 @@ def validate(epoch, val_loader, model, criterion):
 
     print("* Valid Prec @1: {top1.avg:.4f}".format(top1=acc))
     return acc.avg, cm
+
+
+def model_inference(
+    model: torch.nn.Module,
+    train_file: os.PathLike = None,
+    test_file: os.PathLike = None,
+    sample_size: int = 10,
+):
+    _, _, alphabet, longest_sent, _, _ = get_data(train_file, test_file)
+    test_df = pd.read_csv(test_file, sep='\t',skiprows=0, encoding = 'utf-8')
+    test_sample = test_df.sample(sample_size, random_state=0)
+    for idx, row in test_sample.iterrows():
+        test_tensor = convert_tweet2tensor(row['text'], alphabet, longest_sent)
+        print(f"test text: {test_df.loc[idx,'text']}")
+        pred_prob = model.forward(test_tensor)
+        pred_label = torch.argmax(pred_prob)
+        print(f"true label: {test_df.loc[idx,'HS']}")
+        print(f"best model predicted label: {pred_label}")
+        print()
