@@ -6,7 +6,7 @@ import torch
 
 
 class MyModel(torch.nn.Module):
-    def __init__(self, alphabet, longest_sent, embedding_size, hidden_size, num_layers, dropout, num_classes, bidrectional, device):
+    def __init__(self, alphabet, longest_sent, embedding_size, hidden_size, num_layers, dropout, num_classes, bidirectional, device):
         super(MyModel, self).__init__()
         self.alphabet = alphabet
         self.longest_sent = longest_sent
@@ -15,7 +15,7 @@ class MyModel(torch.nn.Module):
         self.num_layers = num_layers
         self.dropout = dropout
         self.num_classes = num_classes
-        self.bidrectional = bidrectional
+        self.bidirectional = bidirectional
         self.device = device
         # Initialize layers
         self.embedding = torch.nn.Embedding(
@@ -30,13 +30,13 @@ class MyModel(torch.nn.Module):
             bias=False,
             batch_first=True,
             dropout=self.dropout,
-            bidirectional=self.bidrectional,
+            bidirectional=self.bidirectional,
             proj_size=0,
             device=self.device,
         )
         # D if bidirectional LSTM
         D = 1
-        if self.bidrectional:
+        if self.bidirectional:
             D = 2
         self.linear = torch.nn.Linear(
             in_features = self.hidden_size*self.longest_sent*D,
