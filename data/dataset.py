@@ -7,7 +7,7 @@ import os
 import pandas as pd
 import torch
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import TensorDataset
+from torch.utils.data import TensorDataset,Dataset
 from typing import Union
 
 import emoji
@@ -20,7 +20,7 @@ def get_data(
     test_file: Union[str, os.PathLike] = None,
 ):
     """
-    Read and clean raw data from the hateful tweet dataset - 
+    Read and clean raw data from the hateful tweet dataset
 
     Parameters:
         train_file (str): Path of the training data in TSV format
@@ -30,8 +30,8 @@ def get_data(
         test_dataset (TensorDataset): Tensor dataset used by pytorch for training set
         alphabet (dict): number of appearance of each word in the entire dataset
         longest_sent (int): longest sentence
-        train_x (torch.tensor): tensor of the training set
-        test_x (torch.tensor): tensor of the test set
+        train_x (tensor): tensor of the training set x
+        test_x (tensor): tensor of the test set x
     """
     assert train_file is not None, "train_file location cannot be found"
     assert test_file is not None, "test_file location cannot be found"
@@ -110,19 +110,6 @@ def get_data(
     return train_dataset, test_dataset, alphabet, longest_sent, train_x, test_x
 
 
-def convert_tweet2tensor(sent, alphabet, max_length):
-    """
-    Utility to process a single tweet for testing
-    """
-    clean_sent = give_emoji_free_text(sent)
-    words_tensor = []
-    words = clean_sent.split()
-    for word in words:
-        words_tensor.append(alphabet[word])
-    padded_words = torch.nn.functional.pad(torch.Tensor(words_tensor), (0, max_length - len(words_tensor)))
-    return padded_words.unsqueeze(0)
-
-
 def unicodeToAscii(s: str):
     return ''.join(
         c for c in unicodedata.normalize('NFD', s)
@@ -157,3 +144,39 @@ def give_emoji_free_text(text):
     clean_text = ' '.join([s for s in list3])
         
     return clean_text
+
+
+class RoBerta_Dataset(Dataset):
+    def __init__(self, 
+                 data_path, 
+                 tokenizer, 
+                 max_token_length:int = 128,
+                sample = 5000,
+                device = 'cpu'):
+        self.data_path = data_path
+        self.tokenizer = tokenizer
+        self.max_token_len = max_token_length
+        self.sample = sample
+        self.device = device
+        self._prepare_data()
+        
+    def _prepare_data(self):
+        self.data = pd.read_csv(self.data_path, sep='\t',skiprows=0, encoding = 'utf-8')
+        self.data['clean_text'] = self.data['text'].apply(give_emoji_free_text)
+        
+    def __len__(self):
+        return(len(self.data))
+    def __getitem__(self, index):
+        item = self.data.iloc[index]
+        text = item['clean_text']
+        label = item['HS']
+        tokens = self.tokenizer.encode_plus(text, 
+                                            add_special_tokens=True,
+                                            return_tensors = 'pt',
+                                            truncation = True,
+                                            max_length = self.max_token_len,
+                                            padding = 'max_length',
+                                           return_attention_mask=True)
+        return({'input_ids': tokens.input_ids.flatten().to(self.device), 
+                'attention_mask': tokens.attention_mask.flatten().to(self.device),
+               'labels': label})
