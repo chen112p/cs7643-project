@@ -12,10 +12,10 @@ tokenizer_dict = {
     'distilroberta_classifer': 'roberta-base'
 }
 #hard code some input parameters
-max_epoch = 3
-train_batch_size = 16
-test_batch_size = 16
-device = 'cpu'
+max_epoch = 20
+train_batch_size = 256
+test_batch_size = 256
+device = 'cuda'
 train_file="data/train_en.tsv"
 test_file="data/dev_en.tsv"
 model_name = 'distilroberta_classifer'
@@ -28,10 +28,10 @@ def main():
     
     train_loader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
-
+    
     model = drc.RobertaClassifier(dropout_rate = 0.2)
     model.to(device)
-
+    
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(params=model.parameters())
 

@@ -179,4 +179,4 @@ class RoBerta_Dataset(Dataset):
                                            return_attention_mask=True)
         return({'input_ids': tokens.input_ids.flatten().to(self.device), 
                 'attention_mask': tokens.attention_mask.flatten().to(self.device),
-               'labels': label})
+               'labels': torch.tensor(label).to(self.device)})

@@ -58,25 +58,25 @@ class SolverLLM():
         print("* Train Prec @1: {top1.avg:.4f}".format(top1=acc))
         return acc.avg, cm
 
-    def validate(self,epoch, val_loader, model, criterion):
+    def validate(self, val_loader):
         iter_time = eval.AverageMeter()
         losses = eval.AverageMeter()
         acc = eval.AverageMeter()
 
-        cm = torch.zeros(model.num_class, model.num_class)
+        cm = torch.zeros(self.model.num_class, self.model.num_class)
         # evaluation loop
-        for idx, (data, target) in enumerate(val_loader):
+        for idx, data in enumerate(val_loader):
             start = time.time()
 
             with torch.no_grad():
-                out = model.forward(data)
-                loss = criterion(out, target)
+                out = self.model.forward(data['input_ids'], data['attention_mask'])
+                loss = self.criterion(out, data['labels'])
                 
-            batch_acc = eval.accuracy(out, target)
+            batch_acc = eval.accuracy(out, data['labels'])
 
             # update confusion matrix
             _, preds = torch.max(out, 1)
-            for t, p in zip(target.view(-1), preds.view(-1)):
+            for t, p in zip(data['labels'].view(-1), preds.view(-1)):
                 cm[t.long(), p.long()] += 1
 
             losses.update(loss.item(), out.shape[0])
@@ -86,7 +86,7 @@ class SolverLLM():
             if idx % 10 == 0:
                 print(('Epoch: [{0}][{1}/{2}]\t'
                     'Time {iter_time.val:.3f} ({iter_time.avg:.3f})\t').format(
-                        epoch,
+                        self.epoch,
                         idx,
                         len(val_loader),
                         iter_time=iter_time,
