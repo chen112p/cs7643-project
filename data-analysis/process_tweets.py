@@ -8,6 +8,7 @@ import pandas as pd
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import TensorDataset
+from torch.utils.data import Dataset
 from typing import Union
 
 import emoji
@@ -157,3 +158,26 @@ def give_emoji_free_text(text):
     clean_text = ' '.join([s for s in list3])
         
     return clean_text
+
+
+class CustomDataset(Dataset):
+    """
+    Custom Dataset class to convert dataframe into torch Dataset for LLM
+    """
+    def __init__(self, longest_sent: int, data: pd.DataFrame, tokenizer: object):
+        self.longest_sent = longest_sent
+        self.data = data
+        self.tokenizer = tokenizer
+        
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, idx):
+        labels = self.data.iloc[idx]["HS"]  # Capture labels information
+        text = self.data.iloc[idx]["clean text"]
+        inputs = self.tokenizer(text, padding="max_length", max_length=self.longest_sent, truncation=True, return_tensors="pt")
+        updated_inputs = {}
+        for k, v in inputs.items():
+            updated_inputs[k] = v.squeeze(0)
+        updated_inputs['labels'] = torch.Tensor([labels, 1-labels])
+        return updated_inputs
