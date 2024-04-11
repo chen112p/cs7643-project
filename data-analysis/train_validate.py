@@ -71,7 +71,8 @@ def train(
         optimizer.zero_grad()
 
         batch_acc = accuracy(out, target)
-
+        print(out)
+        return()
         # update confusion matrix
         _, preds = torch.max(out, 1)
         for t, p in zip(target.view(-1), preds.view(-1)):
@@ -120,7 +121,7 @@ def validate(
         with torch.no_grad():
             out = model.forward(data)
             loss = criterion(out, target)
-            
+
         batch_acc = accuracy(out, target)
 
         # update confusion matrix

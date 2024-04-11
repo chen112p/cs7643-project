@@ -12,13 +12,16 @@ tokenizer_dict = {
     'distilroberta_classifer': 'roberta-base'
 }
 #hard code some input parameters
-max_epoch = 20
+max_epoch = 10
 train_batch_size = 256
 test_batch_size = 256
 device = 'cuda'
 train_file="data/train_en.tsv"
 test_file="data/dev_en.tsv"
 model_name = 'distilroberta_classifer'
+lr = 1e-5
+dropout_rate = 0.5
+
 def main():  
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_dict[model_name])
     
@@ -28,12 +31,11 @@ def main():
     
     train_loader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
-    
-    model = drc.RobertaClassifier(dropout_rate = 0.2)
+    model = drc.RobertaClassifier(dropout_rate = dropout_rate)
     model.to(device)
     
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(params=model.parameters())
+    optimizer = torch.optim.Adam(lr = lr, params=model.parameters())
 
     solver = solver_llm.SolverLLM(model,
                                 optimizer,
@@ -58,8 +60,8 @@ def main():
             best_cm = valid_cm
             best_model = copy.deepcopy(model)
     
-    torch.save(model.save(best_model.state_dict(), 
-                               '{}_{}'.format(model_name, timestamp_str)))
+    torch.save(best_model.state_dict(), 
+              'models/{}_{}'.format(model_name, timestamp_str))
     print('Best Prec @1 Acccuracy: {:.4f}'.format(best))
     per_cls_acc = best_cm.diag().detach().numpy().tolist()
     for i, acc_i in enumerate(per_cls_acc):
