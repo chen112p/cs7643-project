@@ -110,6 +110,19 @@ def get_data(
     return train_dataset, test_dataset, alphabet, longest_sent, train_x, test_x
 
 
+def convert_tweet2tensor(sent, alphabet, max_length):
+    """
+    Utility to process a single tweet for testing
+    """
+    clean_sent = give_emoji_free_text(sent)
+    words_tensor = []
+    words = clean_sent.split()
+    for word in words:
+        words_tensor.append(alphabet[word])
+    padded_words = torch.nn.functional.pad(torch.Tensor(words_tensor), (0, max_length - len(words_tensor)))
+    return padded_words.unsqueeze(0)
+
+
 def unicodeToAscii(s: str):
     return ''.join(
         c for c in unicodedata.normalize('NFD', s)
@@ -180,3 +193,26 @@ class RoBerta_Dataset(Dataset):
         return({'input_ids': tokens.input_ids.flatten().to(self.device), 
                 'attention_mask': tokens.attention_mask.flatten().to(self.device),
                'labels': torch.tensor(label).to(self.device)})
+
+
+class CustomDataset(Dataset):
+    """
+    Custom Dataset class to convert dataframe into torch Dataset for LLM
+    """
+    def __init__(self, longest_sent: int, data: pd.DataFrame, tokenizer: object):
+        self.longest_sent = longest_sent
+        self.data = data
+        self.tokenizer = tokenizer
+        
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, idx):
+        labels = self.data.iloc[idx]["HS"]  # Capture labels information
+        text = self.data.iloc[idx]["clean text"]
+        inputs = self.tokenizer(text, padding="max_length", max_length=self.longest_sent, truncation=True, return_tensors="pt")
+        updated_inputs = {}
+        for k, v in inputs.items():
+            updated_inputs[k] = v.squeeze(0)
+        updated_inputs['labels'] = torch.Tensor([labels, 1-labels])
+        return updated_inputs
