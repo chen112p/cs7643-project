@@ -199,10 +199,11 @@ class CustomDataset(Dataset):
     """
     Custom Dataset class to convert dataframe into torch Dataset for LLM
     """
-    def __init__(self, longest_sent: int, data: pd.DataFrame, tokenizer: object):
+    def __init__(self, longest_sent: int, data: pd.DataFrame, tokenizer: object, device):
         self.longest_sent = longest_sent
         self.data = data
         self.tokenizer = tokenizer
+        self.device = device
         
     def __len__(self):
         return len(self.data)
@@ -213,6 +214,6 @@ class CustomDataset(Dataset):
         inputs = self.tokenizer(text, padding="max_length", max_length=self.longest_sent, truncation=True, return_tensors="pt")
         updated_inputs = {}
         for k, v in inputs.items():
-            updated_inputs[k] = v.squeeze(0)
-        updated_inputs['labels'] = torch.Tensor([labels, 1-labels])
+            updated_inputs[k] = v.squeeze(0).to(self.device)
+        updated_inputs['labels'] = torch.Tensor([labels, 1-labels]).to(self.device)
         return updated_inputs
