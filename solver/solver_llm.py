@@ -62,7 +62,7 @@ class SolverLLM():
             print("Train Accuracy of Class {}: {:.4f}".format(i, acc_i))
 
         print("* Train Prec @1: {top1.avg:.4f}".format(top1=acc))
-        return acc.avg, cm
+        return acc.avg, cm, losses
 
     def validate(self, val_loader):
         iter_time = eval.AverageMeter()
@@ -111,4 +111,4 @@ class SolverLLM():
             print("Valid Accuracy of Class {}: {:.4f}".format(i, acc_i))
 
         print("* Valid Prec @1: {top1.avg:.4f}".format(top1=acc))
-        return acc.avg, cm
+        return acc.avg, cm, losses
