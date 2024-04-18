@@ -16,9 +16,8 @@ class RobertaClassifier(torch.nn.Module):
         torch.nn.init.xavier_uniform_(self.classifier.weight)
         self.dropout = torch.nn.Dropout(dropout_rate)
 
-    def forward(self, 
-                input_ids,
-                attention_mask):
+    def forward(self, x):
+        (input_ids, attention_mask) = x
         # roberta model
         output = self.pretrain_model(input_ids = input_ids, attention_mask = attention_mask)
         pooled_output = torch.mean(output.last_hidden_state, 1)

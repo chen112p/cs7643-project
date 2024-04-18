@@ -1,0 +1,10 @@
+max_epoch: 10
+train_batch_size: 256
+test_batch_size: 256
+device: cuda
+train_file: data/train_en.tsv
+test_file: data/dev_en.tsv
+model_name: distilroberta_classifer
+lr: 0.00001
+dropout_rate: 0.5
+max_epoch: 1
