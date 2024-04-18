@@ -3,7 +3,6 @@ import torch
 from data import dataset
 from transformers import AutoTokenizer
 from torch.utils.data import DataLoader
-from models import distilroberta_classifier as drc
 from solver import solver_llm
 import copy
 import matplotlib.pyplot as plt
@@ -28,6 +27,7 @@ tokenizer_dict = {
 
 def main(config_file): 
     device = config_file['device']
+
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_dict[config_file['model_name']])
     
 
@@ -44,7 +44,10 @@ def main(config_file):
     test_loader = DataLoader(test_dataset, 
                             batch_size = config_file['test_batch_size'],
                             shuffle=True)
-    model = drc.RobertaClassifier(dropout_rate = config_file['dropout_rate'])
+                            
+    if config_file['model_name'] == 'distilroberta_classifer':
+        from models import distilroberta_classifier as drc
+        model = drc.RobertaClassifier(dropout_rate = config_file['dropout_rate'])
     model.to(device)
     
     criterion = torch.nn.CrossEntropyLoss()
