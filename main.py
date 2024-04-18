@@ -22,7 +22,8 @@ def read_yaml(file_path):
 
 timestamp_str = datetime.now().strftime("%Y%m%d%H%M")
 tokenizer_dict = {
-    'distilroberta_classifier': 'roberta-base'
+    'distilroberta_classifier': 'roberta-base',
+    'roberta_classifier': 'roberta-base'
 }
 
 def main(config_file): 
@@ -48,6 +49,9 @@ def main(config_file):
     if config_file['model_name'] == 'distilroberta_classifier':
         from models import distilroberta_classifier as drc
         model = drc.RobertaClassifier(dropout_rate = config_file['dropout_rate'])
+    elif config_file['model_name'] == 'roberta_classifier':
+        from models import roberta_classifier as rc
+        model = rc.RobertaClassifier(dropout_rate = config_file['dropout_rate'])
     model.to(device)
     
     criterion = torch.nn.CrossEntropyLoss()
