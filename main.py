@@ -22,7 +22,7 @@ def read_yaml(file_path):
 
 timestamp_str = datetime.now().strftime("%Y%m%d%H%M")
 tokenizer_dict = {
-    'distilroberta_classifer': 'roberta-base'
+    'distilroberta_classifier': 'roberta-base'
 }
 
 def main(config_file): 
@@ -45,7 +45,7 @@ def main(config_file):
                             batch_size = config_file['test_batch_size'],
                             shuffle=True)
                             
-    if config_file['model_name'] == 'distilroberta_classifer':
+    if config_file['model_name'] == 'distilroberta_classifier':
         from models import distilroberta_classifier as drc
         model = drc.RobertaClassifier(dropout_rate = config_file['dropout_rate'])
     model.to(device)
@@ -61,16 +61,20 @@ def main(config_file):
     best_cm = None
     best_model = None
     train_acc_epoch = []
+    train_loss_epoch = []
     valid_acc_epoch = []
+    valid_loss_epoch = []
     for epoch in range(config_file['max_epoch']):
         solver.epoch = epoch
         # train loop
         train_acc, train_cm, train_loss = solver.train(train_loader)
         train_acc_epoch.append(train_acc.detach().cpu().numpy())
+        train_loss_epoch.append(train_loss)
 
         # validation loop
         valid_acc, valid_cm, valid_loss = solver.validate(test_loader)
         valid_acc_epoch.append(valid_acc.detach().cpu().numpy())
+        valid_loss_epoch.append(valid_loss)
 
         if valid_acc > best:
             best = valid_acc
@@ -85,8 +89,9 @@ def main(config_file):
         print("Accuracy of Class {}: {:.4f}".format(i, acc_i))
 
     f,ax = plt.subplots(2,1)
-    ax[0].plot(range(config_file['max_epoch']), train_acc_epoch, label='train')
-    ax[0].plot(range(config_file['max_epoch']), valid_acc_epoch, label='validation')
+    ax[0].plot(range(config_file['max_epoch']), train_loss_epoch, label='train')
+    ax[0].plot(range(config_file['max_epoch']), valid_loss_epoch, label='validation')
+    ax[0].set_title('loss curve')
     ax[0].set_xlabel('epoch')
     ax[0].set_label('loss')
     ax[1].plot(range(config_file['max_epoch']), train_acc_epoch, label='train')
@@ -95,6 +100,7 @@ def main(config_file):
     ax[1].set_title("accuracy curve")
     ax[1].set_xlabel('epoch')
     ax[1].set_label('accuracy')
+    f.tight_layout()
     os.makedirs('figs',exist_ok=True)
     f.savefig('figs/{}_{}.png'.format(config_file['model_name'], timestamp_str))
 
