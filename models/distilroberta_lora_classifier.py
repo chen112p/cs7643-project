@@ -131,15 +131,20 @@ class RobertaLoraClassifier(torch.nn.Module):
     def __init__(self,
                 dropout_rate):
         super().__init__()
+        self.lora_rank = 8
+        self.train_biases = True
+        self.train_embeddings = False
+        self.train_layer_norms = True
+
         self.num_class = 2
         self.pretrain_model = AutoModel.from_pretrained('roberta-base', return_dict = True)
-        self.hidden = torch.nn.Linear(self.pretrain_model.config.hidden_size, 
+        self.finetune_head_hidden = torch.nn.Linear(self.pretrain_model.config.hidden_size, 
                                 self.pretrain_model.config.hidden_size)
-        self.classifier = torch.nn.Linear(self.pretrain_model.config.hidden_size,
+        self.finetune_head_classifier = torch.nn.Linear(self.pretrain_model.config.hidden_size,
                                         self.num_class)
-        torch.nn.init.xavier_uniform_(self.hidden.weight)
-        torch.nn.init.xavier_uniform_(self.classifier.weight)
-        self.dropout = torch.nn.Dropout(dropout_rate)
+        torch.nn.init.xavier_uniform_(self.finetune_head_hidden.weight)
+        torch.nn.init.xavier_uniform_(self.finetune_head_classifier.weight)
+        self.finetune_head_dropout = torch.nn.Dropout(dropout_rate)
         self.model_config = self.pretrain_model.config
         # lora
         self.replace_multihead_attention()
