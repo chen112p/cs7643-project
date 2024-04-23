@@ -23,7 +23,8 @@ def read_yaml(file_path):
 timestamp_str = datetime.now().strftime("%Y%m%d%H%M")
 tokenizer_dict = {
     'distilroberta_classifier': 'roberta-base',
-    'roberta_classifier': 'roberta-base'
+    'roberta_classifier': 'roberta-base',
+    'distilroberta_lora_classifier': 'roberta-base'
 }
 
 def main(config_file): 
@@ -52,6 +53,9 @@ def main(config_file):
     elif config_file['model_name'] == 'roberta_classifier':
         from models import roberta_classifier as rc
         model = rc.RobertaClassifier(dropout_rate = config_file['dropout_rate'])
+    elif config_file['model_name'] == 'distilroberta_lora_classifier':
+        from models import distilroberta_lora_classifier as drlc
+        model = drlc.RobertaLoraClassifier(dropout_rate = config_file['dropout_rate'])
     model.to(device)
     
     criterion = torch.nn.CrossEntropyLoss()
@@ -84,9 +88,12 @@ def main(config_file):
             best = valid_acc
             best_cm = valid_cm
             best_model = copy.deepcopy(model)
-    
-    torch.save(best_model.state_dict(), 
-              'models/{}_{}'.format(config_file['model_name'], timestamp_str))
+        break
+    if config_file['model_name'] != 'distilroberta_lora_classifier':
+        torch.save(best_model.state_dict(), 
+                  'models/{}_{}'.format(config_file['model_name'], timestamp_str))
+    else:
+        print(best_model.lora_query_matrix_B.shape)
     print('Best Prec @1 Acccuracy: {:.4f}'.format(best))
     per_cls_acc = best_cm.diag().detach().numpy().tolist()
     for i, acc_i in enumerate(per_cls_acc):

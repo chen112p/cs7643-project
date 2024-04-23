@@ -157,10 +157,10 @@ class RobertaLoraClassifier(torch.nn.Module):
         output = self.pretrain_model(input_ids = input_ids, attention_mask = attention_mask)
         pooled_output = torch.mean(output.last_hidden_state, 1)
         # neural network classification layer
-        pooled_output = self.hidden(pooled_output)
-        pooled_output = self.dropout(pooled_output)
+        pooled_output = self.finetune_head_hidden(pooled_output)
+        pooled_output = self.finetune_head_dropout(pooled_output)
         pooled_output = F.relu(pooled_output)
-        logits = self.classifier(pooled_output)        
+        logits = self.finetune_head_classifier(pooled_output)        
         return(logits)
     def replace_multihead_attention(self):
         self.nr_replaced_modules = 0
