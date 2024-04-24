@@ -1,7 +1,7 @@
 import os
 import torch
 from data import dataset
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, BitsAndBytesConfig
 from torch.utils.data import DataLoader
 from solver import solver_llm
 import copy
@@ -28,14 +28,18 @@ tokenizer_dict = {
     'distilroberta_qlora_classifier': 'roberta-base',
 }
 
-lora_models = ['distilroberta_lora_classifier',
-                'distilroberta_qlora_classifier']
+lora_models = ['distilroberta_lora_classifier']
 
 def main(config_file): 
     device = config_file['device']
-
+    
     if config_file['model_name'] == "RNN":
-        train_dataset, test_dataset, alphabet, longest_sent, _, _ = dataset.get_data(config_file['train_file'], config_file['test_file'])
+        (train_dataset, 
+        test_dataset, 
+        alphabet, 
+        longest_sent, _, _) = dataset.get_data(config_file['train_file'], 
+                                              config_file['test_file'])
+                                              
     else:
         tokenizer = AutoTokenizer.from_pretrained(tokenizer_dict[config_file['model_name']])
         train_dataset = dataset.RoBerta_Dataset(config_file['train_file'],
@@ -82,7 +86,6 @@ def main(config_file):
         model_type = "RNN"
         optimizer = torch.optim.Adam(lr = config_file['lr'], params=model.parameters())
     elif config_file['model_name'] == 'distilroberta_qlora_classifier':
-        from transformers import AutoTokenizer, AutoModelForSequenceClassification, BitsAndBytesConfig
         from peft import LoraConfig, get_peft_model
         import bitsandbytes as bnb
         # Configuration to load a quantized model
@@ -140,15 +143,19 @@ def main(config_file):
             best = valid_acc
             best_cm = valid_cm
             best_model = copy.deepcopy(model)
-        break
-    if config_file['model_name'] not in lora_models:
-        torch.save(best_model.state_dict(), 
+        
+    if config_file['model_name'] in lora_models:
+        state_dict = {}
+        for name, param in best_model.named_parameters():
+            if param.requires_grad:
+                state_dict[name] = param
+        torch.save(state_dict, 
                   'models/{}_{}'.format(config_file['model_name'], timestamp_str))
     else:
+        torch.save(best_model.state_dict(), 
+                  'models/{}_{}'.format(config_file['model_name'], timestamp_str))
         
-        print(best_model.lora_query_matrix_B.shape)
-
-    print('Best Prec @1 Acccuracy: {:.4f}'.format(best))
+    #print('Best Prec @1 Acccuracy: {:.4f}'.format(best))
     per_cls_acc = best_cm.diag().detach().numpy().tolist()
     for i, acc_i in enumerate(per_cls_acc):
         print("Accuracy of Class {}: {:.4f}".format(i, acc_i))
@@ -175,4 +182,5 @@ if __name__ == '__main__':
                           help="Path to the configuration file")
     args = parser.parse_args()
     config_file = read_yaml(os.path.join('config',args.config_file))
+
     main(config_file)

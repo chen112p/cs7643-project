@@ -135,13 +135,13 @@ class RobertaLoraClassifier(torch.nn.Module):
         self.train_biases = True
         self.train_embeddings = False
         self.train_layer_norms = True
-
-        self.num_class = 2
-        self.pretrain_model = AutoModel.from_pretrained('roberta-base', return_dict = True)
+        self.base_model = 'distilroberta-base'
+        self.num_labels = 2
+        self.pretrain_model = AutoModel.from_pretrained(self.base_model, return_dict = True)
         self.finetune_head_hidden = torch.nn.Linear(self.pretrain_model.config.hidden_size, 
                                 self.pretrain_model.config.hidden_size)
         self.finetune_head_classifier = torch.nn.Linear(self.pretrain_model.config.hidden_size,
-                                        self.num_class)
+                                        self.num_labels)
         torch.nn.init.xavier_uniform_(self.finetune_head_hidden.weight)
         torch.nn.init.xavier_uniform_(self.finetune_head_classifier.weight)
         self.finetune_head_dropout = torch.nn.Dropout(dropout_rate)
@@ -170,24 +170,18 @@ class RobertaLoraClassifier(torch.nn.Module):
         for name, module in model.named_children():
             if isinstance(module, RobertaSelfAttention):
                 self.nr_replaced_modules += 1
-
                 # Create a new LoraMultiheadAttention layer
                 new_layer = LoraRobertaSelfAttention(r=self.lora_rank, config=self.model_config)
-
                 # Get the state of the original layer
                 state_dict_old = module.state_dict()
-
                 # Load the state dict to the new layer
                 new_layer.load_state_dict(state_dict_old, strict=False)
-
                 # Get the state of the new layer
                 state_dict_new = new_layer.state_dict()
-
                 # Compare keys of both state dicts
                 keys_old = set(state_dict_old.keys())
                 keys_new = set(k for k in state_dict_new.keys() if not k.startswith("lora_"))
                 assert keys_old == keys_new, f"Keys of the state dictionaries don't match (ignoring lora parameters):\n\tExpected Parameters: {keys_old}\n\tNew Parameters (w.o. LoRA): {keys_new}"
-
                 # Replace the original layer with the new layer
                 setattr(model, name, new_layer)
 
@@ -202,8 +196,12 @@ class RobertaLoraClassifier(torch.nn.Module):
         All finetune head parameters are identified by having a name that starts with *finetune_head_*.
         """
         for name, param in self.pretrain_model.named_parameters():
-            if ("lora_" in name) or ("finetune_head_" in name) or (self.train_biases and "bias" in name) \
-                or (self.train_embeddings and "embeddings" in name) or (self.train_layer_norms and "LayerNorm" in name):
+            if ("lora_" in name) or ("finetune_head_" in name) or \
+                (self.train_biases and "bias" in name) or \
+                (self.train_embeddings and "embeddings" in name) or \
+                (self.train_layer_norms and "LayerNorm" in name):
+                
                 param.requires_grad = True
             else:
+                print(name)
                 param.requires_grad = False
