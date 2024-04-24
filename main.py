@@ -24,7 +24,8 @@ timestamp_str = datetime.now().strftime("%Y%m%d%H%M")
 tokenizer_dict = {
     'distilroberta_classifier': 'roberta-base',
     'roberta_classifier': 'roberta-base',
-    'distilroberta_lora_classifier': 'roberta-base'
+    'distilroberta_lora_classifier': 'roberta-base',
+    'distilroberta_qlora_classifier': 'roberta-base',
 }
 
 def main(config_file): 
@@ -50,21 +51,54 @@ def main(config_file):
     if config_file['model_name'] == 'distilroberta_classifier':
         from models import distilroberta_classifier as drc
         model = drc.RobertaClassifier(dropout_rate = config_file['dropout_rate'])
+        model_type = "LLM"
+        optimizer = torch.optim.Adam(lr = config_file['lr'], params=model.parameters())
     elif config_file['model_name'] == 'roberta_classifier':
         from models import roberta_classifier as rc
         model = rc.RobertaClassifier(dropout_rate = config_file['dropout_rate'])
+        model_type = "LLM"
+        optimizer = torch.optim.Adam(lr = config_file['lr'], params=model.parameters())
     elif config_file['model_name'] == 'distilroberta_lora_classifier':
         from models import distilroberta_lora_classifier as drlc
         model = drlc.RobertaLoraClassifier(dropout_rate = config_file['dropout_rate'])
+        model_type = "LLM"
+        optimizer = torch.optim.Adam(lr = config_file['lr'], params=model.parameters())
+    elif config_file['model_name'] == 'distilroberta_qlora_classifier':
+        from transformers import AutoTokenizer, AutoModelForSequenceClassification, BitsAndBytesConfig
+        from peft import LoraConfig, get_peft_model
+        import bitsandbytes as bnb
+        # Configuration to load a quantized model
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,  # Enable 4-bit loading
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16,
+        )
+        model = AutoModelForSequenceClassification.from_pretrained('roberta-base',
+            torch_dtype="auto", quantization_config=bnb_config)
+        # Config for the LoRA Injection via PEFT
+        peft_config = LoraConfig(
+            r=config_file['qlora_rank'], # rank dimension of the LoRA injected matrices
+            lora_alpha=config_file['qlora_alpha'], # parameter for scaling, use 8 here to make it comparable with our own implementation
+            target_modules=['query', 'key', 'value', 'intermediate.dense', 'output.dense'], # be precise about dense because classifier has dense too
+            # modules_to_save=["LayerNorm", "classifier", "qa_outputs"], # Retrain the layer norm; classifier is the fine-tune head; qa_outputs is for SQuAD
+            lora_dropout=config_file['dropout_rate'], # dropout probability for layers
+            bias="all", # none, all=retrain all biases of all modules, or lora_only
+        )
+        # Prepare the model for quantization
+        model = get_peft_model(model, peft_config)
+        model_type = "QLORA"
+        optimizer = bnb.optim.AdamW8bit(model.parameters(), lr = config_file['lr'])
+    
     model.to(device)
     
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(lr = config_file['lr'], 
-                                  params=model.parameters())
+    
 
     solver = solver_llm.SolverLLM(model,
                                 optimizer,
-                                criterion)
+                                criterion,
+                                model_type)
     best = 0.0
     best_cm = None
     best_model = None

@@ -16,18 +16,25 @@ class SolverLLM():
         losses = eval.AverageMeter()
         acc = eval.AverageMeter()
 
-        cm = torch.zeros(self.model.num_class, self.model.num_class)
+        cm = torch.zeros(self.model.num_labels, self.model.num_labels)
 
         for idx, data in enumerate(data_loader):
             start = time.time()
             if self.model_type == "RNN":
                 x = data[0]
                 y = data[1]
+                out = self.model.forward(x)
+                loss = self.criterion(out, y)
             elif self.model_type == "LLM":
                 x = data['input_ids'], data['attention_mask']
                 y = data['labels']
-            out = self.model.forward(x)
-            loss = self.criterion(out, y)
+                out = self.model.forward(x)
+                loss = self.criterion(out, y)
+            elif self.model_type == "QLORA":
+                y = data['labels']
+                outputs = self.model.forward(**data)
+                loss = outputs.loss
+                out = outputs.logits
             
             # Backpropagation
             loss.backward()
@@ -69,22 +76,29 @@ class SolverLLM():
         losses = eval.AverageMeter()
         acc = eval.AverageMeter()
 
-        cm = torch.zeros(self.model.num_class, self.model.num_class)
+        cm = torch.zeros(self.model.num_labels, self.model.num_labels)
+
         # evaluation loop
         for idx, data in enumerate(val_loader):
             start = time.time()
 
-            if self.model_type == "RNN":
-                x = data[0]
-                y = data[1]
-            elif self.model_type == "LLM":
-                x = data['input_ids'], data['attention_mask']
-                y = data['labels']
-
             with torch.no_grad():
-                out = self.model.forward(x)
-                loss = self.criterion(out, y)
-                
+                if self.model_type == "RNN":
+                    x = data[0]
+                    y = data[1]
+                    out = self.model.forward(x)
+                    loss = self.criterion(out, y)
+                elif self.model_type == "LLM":
+                    x = data['input_ids'], data['attention_mask']
+                    y = data['labels']
+                    out = self.model.forward(x)
+                    loss = self.criterion(out, y)
+                elif self.model_type == "QLORA":
+                    y = data['labels']
+                    outputs = self.model.forward(**data)
+                    loss = outputs.loss
+                    out = outputs.logits
+
             batch_acc = eval.accuracy(out, y)
 
             # update confusion matrix
