@@ -1,0 +1,13 @@
+train_batch_size: 16
+test_batch_size: 16
+device: cuda
+train_file: data/train_en.tsv
+test_file: data/dev_en.tsv
+model_name: distilroberta_qlora_classifier
+lr: 0.00001
+qlora_rank: 2
+qlora_alpha: 8
+qlora_target_modules: ['query', 'key', 'value'] #, 'intermediate.dense', 'output.dense']
+qlora_bias: 'all' # all=retrain all biases of all modules, or lora_only
+dropout_rate: 0.4
+max_epoch: 10

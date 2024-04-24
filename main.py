@@ -80,10 +80,10 @@ def main(config_file):
         peft_config = LoraConfig(
             r=config_file['qlora_rank'], # rank dimension of the LoRA injected matrices
             lora_alpha=config_file['qlora_alpha'], # parameter for scaling, use 8 here to make it comparable with our own implementation
-            target_modules=['query', 'key', 'value', 'intermediate.dense', 'output.dense'], # be precise about dense because classifier has dense too
+            target_modules=config_file['qlora_target_modules'], # be precise about dense because classifier has dense too
             # modules_to_save=["LayerNorm", "classifier", "qa_outputs"], # Retrain the layer norm; classifier is the fine-tune head; qa_outputs is for SQuAD
             lora_dropout=config_file['dropout_rate'], # dropout probability for layers
-            bias="all", # none, all=retrain all biases of all modules, or lora_only
+            bias=config_file['qlora_bias'], # none, all=retrain all biases of all modules, or lora_only
         )
         # Prepare the model for quantization
         model = get_peft_model(model, peft_config)
