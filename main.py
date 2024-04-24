@@ -28,6 +28,9 @@ tokenizer_dict = {
     'distilroberta_qlora_classifier': 'roberta-base',
 }
 
+lora_models = ['distilroberta_lora_classifier',
+                'distilroberta_qlora_classifier']
+
 def main(config_file): 
     device = config_file['device']
 
@@ -138,11 +141,13 @@ def main(config_file):
             best_cm = valid_cm
             best_model = copy.deepcopy(model)
         break
-    if config_file['model_name'] != 'distilroberta_lora_classifier':
+    if config_file['model_name'] not in lora_models:
         torch.save(best_model.state_dict(), 
                   'models/{}_{}'.format(config_file['model_name'], timestamp_str))
     else:
+        
         print(best_model.lora_query_matrix_B.shape)
+
     print('Best Prec @1 Acccuracy: {:.4f}'.format(best))
     per_cls_acc = best_cm.diag().detach().numpy().tolist()
     for i, acc_i in enumerate(per_cls_acc):
