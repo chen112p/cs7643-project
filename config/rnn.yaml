@@ -1,0 +1,14 @@
+train_batch_size: 250
+test_batch_size: 250
+device: cpu
+train_file: data/train_en.tsv
+test_file: data/dev_en.tsv
+model_name: RNN
+lr: 0.005
+embedding_size: 24
+hidden_size: 64
+num_layers: 1
+num_labels: 2
+bidrectional: True
+dropout_rate: 0.3
+max_epoch: 50

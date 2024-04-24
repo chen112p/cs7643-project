@@ -31,16 +31,17 @@ tokenizer_dict = {
 def main(config_file): 
     device = config_file['device']
 
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_dict[config_file['model_name']])
-    
-
-    train_dataset = dataset.RoBerta_Dataset(config_file['train_file'],
-                                            tokenizer,
-                                            device = device)
-    test_dataset = dataset.RoBerta_Dataset(config_file['test_file'],
-                                            tokenizer,
-                                            device = device)
-    
+    if config_file['model_name'] == "RNN":
+        train_dataset, test_dataset, alphabet, longest_sent, _, _ = dataset.get_data(config_file['train_file'], config_file['test_file'])
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer_dict[config_file['model_name']])
+        train_dataset = dataset.RoBerta_Dataset(config_file['train_file'],
+                                                tokenizer,
+                                                device = device)
+        test_dataset = dataset.RoBerta_Dataset(config_file['test_file'],
+                                                tokenizer,
+                                                device = device)
+        
     train_loader = DataLoader(train_dataset, 
                             batch_size=config_file['train_batch_size'], 
                             shuffle=True)
@@ -62,6 +63,20 @@ def main(config_file):
         from models import distilroberta_lora_classifier as drlc
         model = drlc.RobertaLoraClassifier(dropout_rate = config_file['dropout_rate'])
         model_type = "LLM"
+        optimizer = torch.optim.Adam(lr = config_file['lr'], params=model.parameters())
+    elif config_file['model_name'] == 'RNN':
+        from models import rnn
+        model = rnn.MyModel(
+            len(alphabet),
+            longest_sent,
+            config_file['embedding_size'],
+            config_file['hidden_size'],
+            config_file['num_layers'],
+            config_file['dropout_rate'],
+            config_file['num_labels'],
+            config_file['bidrectional'],
+            device)
+        model_type = "RNN"
         optimizer = torch.optim.Adam(lr = config_file['lr'], params=model.parameters())
     elif config_file['model_name'] == 'distilroberta_qlora_classifier':
         from transformers import AutoTokenizer, AutoModelForSequenceClassification, BitsAndBytesConfig
