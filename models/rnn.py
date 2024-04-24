@@ -9,11 +9,11 @@ import torch
 
 
 class MyModel(torch.nn.Module):
-    def __init__(self, alphabet, longest_sent, embedding_size, hidden_size, num_layers, dropout, num_class, bidirectional, device):
+    def __init__(self, alphabet, longest_sent, embedding_size, hidden_size, num_layers, dropout, num_labels, bidirectional, device):
         super(MyModel, self).__init__()
         self.alphabet = alphabet
         self.longest_sent = longest_sent
-        self.num_class = num_class
+        self.num_labels = num_labels
         self.embedding_size = embedding_size # some lower level dimensions
         self.hidden_size = hidden_size
         self.num_layers = num_layers
@@ -43,7 +43,7 @@ class MyModel(torch.nn.Module):
             D = 2
         self.linear = torch.nn.Linear(
             in_features = self.hidden_size*self.longest_sent*D,
-            out_features=self.num_class,
+            out_features=self.num_labels,
             bias=False,
             device=self.device,
         )
