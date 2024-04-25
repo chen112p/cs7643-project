@@ -1,7 +1,11 @@
 import os
 import torch
+import nltk
+nltk.download('stopwords')
 from data import dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, BitsAndBytesConfig
+from peft import LoraConfig, get_peft_model
+import bitsandbytes as bnb
 from torch.utils.data import DataLoader
 from solver import solver_llm
 import copy
@@ -86,8 +90,6 @@ def main(config_file):
         model_type = "RNN"
         optimizer = torch.optim.Adam(lr = config_file['lr'], params=model.parameters())
     elif config_file['model_name'] == 'distilroberta_qlora_classifier':
-        from peft import LoraConfig, get_peft_model
-        import bitsandbytes as bnb
         # Configuration to load a quantized model
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,  # Enable 4-bit loading
