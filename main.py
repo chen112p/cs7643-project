@@ -127,19 +127,23 @@ def main(config_file):
     best_model = None
     train_acc_epoch = []
     train_loss_epoch = []
+    train_time_epoch = []
     valid_acc_epoch = []
     valid_loss_epoch = []
+    valid_time_epoch = []
     for epoch in range(config_file['max_epoch']):
         solver.epoch = epoch
         # train loop
-        train_acc, train_cm, train_loss = solver.train(train_loader)
+        train_acc, train_cm, train_loss, train_iter_time = solver.train(train_loader)
         train_acc_epoch.append(train_acc.detach().cpu().numpy())
         train_loss_epoch.append(train_loss)
+        train_time_epoch.append(train_iter_time)
 
         # validation loop
-        valid_acc, valid_cm, valid_loss = solver.validate(test_loader)
+        valid_acc, valid_cm, valid_loss, valid_iter_time = solver.validate(test_loader)
         valid_acc_epoch.append(valid_acc.detach().cpu().numpy())
         valid_loss_epoch.append(valid_loss)
+        valid_time_epoch.append(valid_iter_time)
 
         if valid_acc > best:
             best = valid_acc
@@ -162,7 +166,7 @@ def main(config_file):
     for i, acc_i in enumerate(per_cls_acc):
         print("Accuracy of Class {}: {:.4f}".format(i, acc_i))
 
-    f,ax = plt.subplots(2,1)
+    f,ax = plt.subplots(3,1)
     ax[0].plot(range(config_file['max_epoch']), train_loss_epoch, label='train')
     ax[0].plot(range(config_file['max_epoch']), valid_loss_epoch, label='validation')
     ax[0].set_title('loss curve')
@@ -174,6 +178,12 @@ def main(config_file):
     ax[1].set_title("accuracy curve")
     ax[1].set_xlabel('epoch')
     ax[1].set_label('accuracy')
+    ax[2].plot(range(config_file['max_epoch']), train_time_epoch, label='train')
+    ax[2].plot(range(config_file['max_epoch']), valid_time_epoch, label='validation')
+    ax[2].legend()
+    ax[2].set_title("Run time curve")
+    ax[2].set_xlabel('epoch')
+    ax[2].set_label('iteration time')
     f.tight_layout()
     os.makedirs('figs',exist_ok=True)
     f.savefig('figs/{}_{}.png'.format(config_file['model_name'], timestamp_str))
