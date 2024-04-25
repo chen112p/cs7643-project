@@ -181,7 +181,7 @@ class RoBerta_Dataset(Dataset):
         return(len(self.data))
     def __getitem__(self, index):
         item = self.data.iloc[index]
-        text = item['clean_text']
+        text = item['text']
         label = item['HS']
         tokens = self.tokenizer.encode_plus(text, 
                                             add_special_tokens=True,

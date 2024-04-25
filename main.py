@@ -156,10 +156,10 @@ def main(config_file):
             if param.requires_grad:
                 state_dict[name] = param
         torch.save(state_dict, 
-                  'models/{}_{}'.format(config_file['model_name'], timestamp_str))
+                  'saved_models/{}_{}'.format(config_file['model_name'], timestamp_str))
     else:
         torch.save(best_model.state_dict(), 
-                  'models/{}_{}'.format(config_file['model_name'], timestamp_str))
+                  'saved_models/{}_{}'.format(config_file['model_name'], timestamp_str))
         
     #print('Best Prec @1 Acccuracy: {:.4f}'.format(best))
     per_cls_acc = best_cm.diag().detach().numpy().tolist()
