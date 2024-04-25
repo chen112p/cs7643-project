@@ -1,9 +1,9 @@
-train_batch_size: 256
-test_batch_size: 256
+train_batch_size: 128
+test_batch_size: 128
 device: cuda
 train_file: data/train.tsv
 test_file: data/validation.tsv
-model_name: distilroberta_lora_classifier
+model_name: roberta_lora_classifier
 lr: 0.00001
 dropout_rate: 0.5
 max_epoch: 30

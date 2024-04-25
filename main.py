@@ -30,9 +30,14 @@ tokenizer_dict = {
     'roberta_classifier': 'roberta-base',
     'distilroberta_lora_classifier': 'roberta-base',
     'distilroberta_qlora_classifier': 'roberta-base',
+    'roberta_lora_classifier': 'roberta-base',
+    'roberta_qlora_classifier': 'roberta-base',
 }
 
-lora_models = ['distilroberta_lora_classifier', 'distilroberta_qlora_classifier']
+lora_models = ['distilroberta_lora_classifier', 
+                'distilroberta_qlora_classifier',
+                'roberta_lora_classifier',
+                'roberta_qlora_classifier']
 
 def main(config_file): 
     device = config_file['device']
@@ -73,6 +78,11 @@ def main(config_file):
     elif config_file['model_name'] == 'distilroberta_lora_classifier':
         from models import distilroberta_lora_classifier as drlc
         model = drlc.RobertaLoraClassifier(dropout_rate = config_file['dropout_rate'])
+        model_type = "LLM"
+        optimizer = torch.optim.Adam(lr = config_file['lr'], params=model.parameters())
+    elif config_file['model_name'] == 'roberta_lora_classifier':
+        from models import roberta_lora_classifier as rlc
+        model = rlc.RobertaLoraClassifier(dropout_rate = config_file['dropout_rate'])
         model_type = "LLM"
         optimizer = torch.optim.Adam(lr = config_file['lr'], params=model.parameters())
     elif config_file['model_name'] == 'RNN':
