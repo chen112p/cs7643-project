@@ -32,7 +32,7 @@ tokenizer_dict = {
     'distilroberta_qlora_classifier': 'roberta-base',
 }
 
-lora_models = ['distilroberta_lora_classifier']
+lora_models = ['distilroberta_lora_classifier', 'distilroberta_qlora_classifier']
 
 def main(config_file): 
     device = config_file['device']
