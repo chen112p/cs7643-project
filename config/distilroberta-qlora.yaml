@@ -1,8 +1,8 @@
 train_batch_size: 16
 test_batch_size: 16
 device: cuda
-train_file: data/train_en.tsv
-test_file: data/dev_en.tsv
+train_file: data/train.tsv
+test_file: data/validation.tsv
 model_name: distilroberta_qlora_classifier
 lr: 0.00001
 qlora_rank: 2
