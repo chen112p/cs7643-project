@@ -1,5 +1,4 @@
 import torch
-from models import roberta_lora_classifier as rlc
 from data import dataset
 from transformers import AutoTokenizer
 from torch.utils.data import DataLoader
@@ -21,7 +20,11 @@ tokenizer_dict = {
 def main(modelname,
         device):
     if "roberta" in modelname.lower() and "lora" in modelname.lower():
+        from models import roberta_lora_classifier as rlc
         model = rlc.RobertaLoraClassifier(dropout_rate = 0.5)
+    elif "roberta" in modelname.lower() and "lora" not in modelname.lower():
+        from models import roberta_classifier as rc
+        model = rc.RobertaClassifier(dropout_rate = 0.5)
     model_state = torch.load(r'saved_models/{}'.format(modelname))
     model.load_state_dict(model_state, strict=False)
     model.to(device)

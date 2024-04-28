@@ -6,12 +6,12 @@ class RobertaClassifier(torch.nn.Module):
     def __init__(self,
                 dropout_rate):
         super().__init__()
-        self.num_class = 2
+        self.num_labels = 2
         self.pretrain_model = AutoModel.from_pretrained('roberta-base', return_dict = True)
         self.hidden = torch.nn.Linear(self.pretrain_model.config.hidden_size, 
                                 self.pretrain_model.config.hidden_size)
         self.classifier = torch.nn.Linear(self.pretrain_model.config.hidden_size,
-                                        self.num_class)
+                                        self.num_labels)
         torch.nn.init.xavier_uniform_(self.hidden.weight)
         torch.nn.init.xavier_uniform_(self.classifier.weight)
         self.dropout = torch.nn.Dropout(dropout_rate)

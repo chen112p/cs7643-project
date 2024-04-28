@@ -129,9 +129,9 @@ class LoraRobertaSelfAttention(RobertaSelfAttention):
 
 class RobertaLoraClassifier(torch.nn.Module):
     def __init__(self,
-                dropout_rate):
+                dropout_rate, lora_rank = 8):
         super().__init__()
-        self.lora_rank = 8
+        self.lora_rank = lora_rank
         self.train_biases = True
         self.train_embeddings = False
         self.train_layer_norms = True
