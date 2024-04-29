@@ -1,5 +1,5 @@
-train_batch_size: 128
-test_batch_size: 128
+train_batch_size: 150
+test_batch_size: 150
 device: cuda
 train_file: data/train.tsv
 test_file: data/validation.tsv
