@@ -14,6 +14,7 @@ plt.style.use('ggplot')
 from datetime import datetime
 import argparse
 import yaml
+import numpy as np
 
 def read_yaml(file_path):
     with open(file_path, 'r') as file:
@@ -82,7 +83,8 @@ def main(config_file):
         optimizer = torch.optim.Adam(lr = config_file['lr'], params=model.parameters())
     elif config_file['model_name'] == 'roberta_lora_classifier':
         from models import roberta_lora_classifier as rlc
-        model = rlc.RobertaLoraClassifier(dropout_rate = config_file['dropout_rate'])
+        model = rlc.RobertaLoraClassifier(dropout_rate = config_file['dropout_rate'],
+                                          lora_rank = config_file['lora_rank'])
         model_type = "LLM"
         optimizer = torch.optim.Adam(lr = config_file['lr'], params=model.parameters())
     elif config_file['model_name'] == 'RNN':
@@ -162,7 +164,9 @@ def main(config_file):
     # saving models
     if config_file['model_name'] in lora_models:
         state_dict = {}
+        state_dict['lora_rank'] = config_file['lora_rank']
         for name, param in best_model.named_parameters():
+
             if param.requires_grad:
                 state_dict[name] = param
         torch.save(state_dict, 
@@ -171,12 +175,12 @@ def main(config_file):
         torch.save(best_model.state_dict(), 
                   'saved_models/{}_{}'.format(config_file['model_name'], timestamp_str))
         
-    #print('Best Prec @1 Acccuracy: {:.4f}'.format(best))
+    print('INFO: {} epochs completed.'.format(config_file['max_epoch']))
     per_cls_acc = best_cm.diag().detach().numpy().tolist()
     for i, acc_i in enumerate(per_cls_acc):
         print("Accuracy of Class {}: {:.4f}".format(i, acc_i))
 
-    f,ax = plt.subplots(3,1)
+    f,ax = plt.subplots(2,1)
     ax[0].plot(range(config_file['max_epoch']), train_loss_epoch, label='train')
     ax[0].plot(range(config_file['max_epoch']), valid_loss_epoch, label='validation')
     ax[0].set_title('loss curve')
@@ -188,15 +192,26 @@ def main(config_file):
     ax[1].set_title("accuracy curve")
     ax[1].set_xlabel('epoch')
     ax[1].set_label('accuracy')
-    ax[2].plot(range(config_file['max_epoch']), train_time_epoch, label='train')
-    ax[2].plot(range(config_file['max_epoch']), valid_time_epoch, label='validation')
-    ax[2].legend()
-    ax[2].set_title("Run time curve")
-    ax[2].set_xlabel('epoch')
-    ax[2].set_label('iteration time')
+    ax[0].set_ylim(0,1.5)
+    ax[1].set_ylim(0.5,1)
     f.tight_layout()
     os.makedirs('figs',exist_ok=True)
     f.savefig('figs/{}_{}.png'.format(config_file['model_name'], timestamp_str))
+
+    log_out = """modelname - {model_name}
+train class 0 accuracy - {train0_acc}
+train class 1 accuracy - {train1_acc}
+validation class 0 accuracy - {val0_acc}
+validation class 1 accuracy - {val1_acc}
+training runtime per epoch - {runtime}""".format(model_name = config_file['model_name'],
+                                      train0_acc = np.round(solver.train_class0_acc,3),
+                                      train1_acc = np.round(solver.train_class1_acc,3),
+                                      val0_acc = np.round(solver.val_class0_acc,3),
+                                      val1_acc = np.round(solver.val_class1_acc,3),
+                                      runtime = np.round(np.array(train_time_epoch).mean(),3))
+
+    with open(r'logs/{}_{}.log'.format(config_file['model_name'], timestamp_str),'w') as f:
+        f.write(log_out)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -1,0 +1,6 @@
+modelname - roberta_classifier
+train class 0 accuracy - 0.6925287246704102
+train class 1 accuracy - 0.5253968238830566
+validation class 0 accuracy - 0.7764368057250977
+validation class 1 accuracy - 0.629365086555481
+training runtime per epoch - 1.2738132297992706

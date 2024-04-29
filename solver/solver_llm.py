@@ -67,6 +67,8 @@ class SolverLLM():
         per_cls_acc = cm.diag().detach().numpy().tolist()
         for i, acc_i in enumerate(per_cls_acc):
             print("Train Accuracy of Class {}: {:.4f}".format(i, acc_i))
+        self.train_class0_acc = per_cls_acc[0]
+        self.train_class1_acc = per_cls_acc[1]
 
         print("* Train Prec @1: {top1.avg:.4f}".format(top1=acc))
         return acc.avg, cm, losses.avg, iter_time.avg
@@ -123,6 +125,7 @@ class SolverLLM():
         per_cls_acc = cm.diag().detach().numpy().tolist()
         for i, acc_i in enumerate(per_cls_acc):
             print("Valid Accuracy of Class {}: {:.4f}".format(i, acc_i))
-
+        self.val_class0_acc = per_cls_acc[0]
+        self.val_class1_acc = per_cls_acc[1]
         print("* Valid Prec @1: {top1.avg:.4f}".format(top1=acc))
-        return acc.avg, cm, losses.avg, iter_time.avg
+        return acc.avg, cm, losses.avg, iter_time.sum
