@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from solver import solver_llm
 import copy
 import matplotlib.pyplot as plt
-plt.style.use('ggplot')
+#plt.style.use('ggplot')
 from datetime import datetime
 import argparse
 import yaml
